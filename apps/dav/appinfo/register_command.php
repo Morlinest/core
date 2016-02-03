@@ -25,17 +25,14 @@ use OCA\DAV\Command\CreateCalendar;
 use OCA\Dav\Command\MigrateAddressbooks;
 use OCA\DAV\Command\SyncSystemAddressBook;
 
-$config = \OC::$server->getConfig();
 $dbConnection = \OC::$server->getDatabaseConnection();
 $userManager = OC::$server->getUserManager();
-$groupManager = OC::$server->getGroupManager();
 $config = \OC::$server->getConfig();
-$logger = \OC::$server->getLogger();
 
 $app = new Application();
 
 /** @var Symfony\Component\Console\Application $application */
-$application->add(new CreateAddressBook($userManager, $groupManager, $dbConnection, $logger));
+$application->add(new CreateAddressBook($userManager, $app->getContainer()->query('CardDavBackend')));
 $application->add(new CreateCalendar($userManager, $dbConnection));
 $application->add(new SyncSystemAddressBook($app->getSyncService()));
 

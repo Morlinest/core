@@ -73,7 +73,7 @@ class CardDavBackendTest extends TestCase {
 
 		$this->db = \OC::$server->getDatabaseConnection();
 
-		$this->backend = new CardDavBackend($this->db, $this->principal);
+		$this->backend = new CardDavBackend($this->db, $this->principal, null);
 
 		// start every test with a empty cards_properties and cards table
 		$query = $this->db->getQueryBuilder();
