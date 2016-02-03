@@ -215,13 +215,14 @@ class Encryption implements IEncryptionModule {
 	 * buffer.
 	 *
 	 * @param string $path to the file
+	 * @param int $position
 	 * @return string remained data which should be written to the file in case
 	 *                of a write operation
 	 * @throws PublicKeyMissingException
 	 * @throws \Exception
 	 * @throws \OCA\Encryption\Exceptions\MultiKeyEncryptException
 	 */
-	public function end($path) {
+	public function end($path, $position = 0) {
 		$result = '';
 		if ($this->isWriteOperation) {
 			// Partial files do not increase the version
@@ -229,8 +230,9 @@ class Encryption implements IEncryptionModule {
 				$this->version = $this->version-1;
 			}
 			$this->keyManager->setVersion($this->path, $this->version+1);
+			$this->keyManager->setNumberOfChunks($this->path, $position);
 			if (!empty($this->writeCache)) {
-				$result = $this->crypt->symmetricEncryptFileContent($this->writeCache, $this->fileKey, $this->version+1);
+				$result = $this->crypt->symmetricEncryptFileContent($this->writeCache, $this->fileKey, $this->version+1, $position.'end');
 				$this->writeCache = '';
 			}
 			$publicKeys = array();
@@ -264,9 +266,10 @@ class Encryption implements IEncryptionModule {
 	 * encrypt data
 	 *
 	 * @param string $data you want to encrypt
+	 * @param int $position
 	 * @return string encrypted data
 	 */
-	public function encrypt($data) {
+	public function encrypt($data, $position = 0) {
 		// If extra data is left over from the last round, make sure it
 		// is integrated into the next block
 		if ($this->writeCache) {
@@ -314,7 +317,7 @@ class Encryption implements IEncryptionModule {
 				if(\OC\Files\Cache\Scanner::isPartialFile($this->path)) {
 					$this->version = $this->version - 1;
 				}
-				$encrypted .= $this->crypt->symmetricEncryptFileContent($chunk, $this->fileKey, $this->version+1);
+				$encrypted .= $this->crypt->symmetricEncryptFileContent($chunk, $this->fileKey, $this->version+1, $position);
 
 				// Remove the chunk we just processed from
 				// $data, leaving only unprocessed data in $data
@@ -332,10 +335,11 @@ class Encryption implements IEncryptionModule {
 	 * decrypt data
 	 *
 	 * @param string $data you want to decrypt
+	 * @param int $position
 	 * @return string decrypted data
 	 * @throws DecryptionFailedException
 	 */
-	public function decrypt($data) {
+	public function decrypt($data, $position = 0) {
 		if (empty($this->fileKey)) {
 			$msg = 'Can not decrypt this file, probably this is a shared file. Please ask the file owner to reshare the file with you.';
 			$hint = $this->l->t('Can not decrypt this file, probably this is a shared file. Please ask the file owner to reshare the file with you.');
@@ -346,7 +350,10 @@ class Encryption implements IEncryptionModule {
 
 		$result = '';
 		if (!empty($data)) {
-			$result = $this->crypt->symmetricDecryptFileContent($data, $this->fileKey, $this->cipher, $this->version);
+			if((int)$this->keyManager->getNumberOfChunks($this->path) === $position) {
+				$position .= 'end';
+			}
+			$result = $this->crypt->symmetricDecryptFileContent($data, $this->fileKey, $this->cipher, $this->version, $position);
 		}
 		return $result;
 	}

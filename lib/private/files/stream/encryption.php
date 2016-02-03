@@ -400,7 +400,8 @@ class Encryption extends Wrapper {
 
 	public function stream_close() {
 		$this->flush();
-		$remainingData = $this->encryptionModule->end($this->fullPath);
+		$position = (int)floor($this->position/$this->unencryptedBlockSize);
+		$remainingData = $this->encryptionModule->end($this->fullPath, $position);
 		if ($this->readOnly === false) {
 			if(!empty($remainingData)) {
 				parent::stream_write($remainingData);
@@ -420,7 +421,8 @@ class Encryption extends Wrapper {
 			// automatically attempted when the file is written to disk -
 			// we are handling that separately here and we don't want to
 			// get into an infinite loop
-			$encrypted = $this->encryptionModule->encrypt($this->cache);
+			$position = (int)floor($this->position/$this->unencryptedBlockSize);
+			$encrypted = $this->encryptionModule->encrypt($this->cache, $position);
 			$bytesWritten = parent::stream_write($encrypted);
 			$this->writeFlag = false;
 			// Check whether the write concerns the last block
@@ -447,7 +449,8 @@ class Encryption extends Wrapper {
 		if ($this->cache === '' && !($this->position === $this->unencryptedSize && ($this->position % $this->unencryptedBlockSize) === 0)) {
 			// Get the data from the file handle
 			$data = parent::stream_read($this->util->getBlockSize());
-			$this->cache = $this->encryptionModule->decrypt($data);
+			$position = (int)floor($this->position/$this->unencryptedBlockSize);
+			$this->cache = $this->encryptionModule->decrypt($data, $position);
 		}
 	}
 

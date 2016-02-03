@@ -431,6 +431,24 @@ class KeyManager {
 	}
 
 	/**
+	 * Get the number of chunks that a file has
+	 *
+	 * @param string $path
+	 * @return mixed
+	 */
+	public function getNumberOfChunks($path) {
+		return $this->keyStorage->getFileKey($path, 'chunks', Encryption::ID);
+	}
+
+	/**
+	 * @param string $path
+	 * @param integer $numberOfChunks
+	 */
+	public function setNumberOfChunks($path, $numberOfChunks) {
+		$this->keyStorage->setFileKey($path, 'chunks', $numberOfChunks, Encryption::ID);
+	}
+
+	/**
 	 * get the encrypted file key
 	 *
 	 * @param string $path
